@@ -2,14 +2,18 @@
 
 - [操作界面簡介](https://hackmd.io/@dinosaur/H1sW7Nw9a/https%3A%2F%2Fhackmd.io%2F%40dinosaur%2FHycXX3BXA)
 
+</br></br>
+
 ## Brief Introduction
 Red-AI-Scanner 是一個透過 AI 驅動的自動化掃描與漏洞驗證工具，整合了 Nmap、Nuclei 等掃描器，並利用 LLM 生成與驗證 Exploit。
+
+## Motivation
+鑑於 GB200 算力平台在佈署 Web 管理介面與 Kubernetes 叢集時，常因複雜的配置需求而面臨潛在的安全配置錯誤（Misconfiguration）風險，本專案旨在透過 AI 驅動的自動化掃描與漏洞腳本生成技術，建立一套能快速驗證 AI 基礎設施弱點的紅隊工具。
 
 ## Concept
 - [OWASP Kubernetes Top Ten](https://owasp.org/www-project-kubernetes-top-ten/)
 
-## Motivation
-鑑於 GB200 算力平台在佈署 Web 管理介面與 Kubernetes 叢集時，常因複雜的配置需求而面臨潛在的安全配置錯誤（Misconfiguration）風險，本專案旨在透過 AI 驅動的自動化掃描與漏洞腳本生成技術，建立一套能快速驗證 AI 基礎設施弱點的紅隊工具。
+</br></br>
 
 ## System Architecture
 
@@ -55,6 +59,8 @@ Red-AI-Scanner 是一個透過 AI 驅動的自動化掃描與漏洞驗證工具�
     bash setup-kubernetes-goat.sh
     ```
 - [WebGoat/WebGoat](https://github.com/WebGoat/WebGoat)
+
+</br></br>
 
 ## Development Tools
 - Gemini(Google AI Pro)
@@ -133,6 +139,8 @@ Kubernets Goat
 
 - [Write-up](https://madhuakula.com/kubernetes-goat/docs/scenarios/)
 
+</br></br>
+
 ## Docker Build & Run
 ### Environment
 - Backend Port: `8000`
@@ -156,6 +164,7 @@ docker pull dinosaursmallli/red-ai-backend:v1
 docker pull dinosaursmallli/red-ai-frontend:v1
 ```
 
+</br></br>
 
 ## Reference
 - [Gemini CLI Document](https://geminicli.com/docs/)

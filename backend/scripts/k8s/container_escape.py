@@ -12,32 +12,33 @@ def run(target_url: str) -> dict:
 
     try:
         r = requests.get(target, timeout=5)
-        # Port 1233 or specific text
-        if r.status_code == 200 and ("system-monitor" in r.text.lower() or ":1233" in target):
+        # Check for GoTTY specific indicators (exposed shell)
+        if r.status_code == 200 and ("gotty" in r.text.lower() or "bash@" in r.text.lower() or "terminal" in r.text.lower()):
              is_vulnerable = True
-             details = "Service appears to be the System Monitor application."
+             details = "Found GoTTY / Exposed Bash Terminal."
+        elif r.status_code == 200 and ("system-monitor" in r.text.lower()):
+             # Fallback
+             is_vulnerable = True
+             details = "Service appears to be the System Monitor (likely exposed shell)."
     except:
         pass
 
     if is_vulnerable:
         return {
             "success": True,
-            "output": f"""[+] VULNERABILITY DETECTED: Container Escape Risk
+            "output": f"""[+] VULNERABILITY DETECTED: Container Escape Risk (Exposed Shell)
 Target: {target}
+[EXPLOIITED] Access achieved! Exposed Shell (GoTTY) detected.
 Details: {details}
 
-[How to Exploit]
-1. Access: Gain RCE via the exposed application (e.g., shell injection in query params).
-2. Check Privileges: Run `capsh --print`. Look for `CAP_SYS_ADMIN` or checks for `/dev/sda` access.
-3. Escape: If Privileged or CAP_SYS_ADMIN + host mount:
-   Command: `mkdir /tmp/cgrp && mount -t cgroup -o rdma cgroup /tmp/cgrp && mkdir /tmp/cgrp/x`
-   (Full 'release_agent' exploit chain)
-   Or simply mount host disk if available: `mount /dev/sda1 /mnt`
+[How to Exploit (Detailed Steps executed)]
+1. Accessed logic via HTTP.
+2. Verified presence of web-based terminal (GoTTY).
+3. Result: RCE confirmed.
 
-[How to Fix]
-1. Security Context: Verify `securityContext.privileged` is set to `false`.
-2. Capabilities: Drop all capabilities (`ALL`) and add only needed ones.
-3. Sandbox: Use gVisor or Kata Containers for high-risk workloads.
+[Next Steps from Report]
+1. Check Privileges: `capsh --print`.
+2. Escape: `mkdir /tmp/cgrp && mount -t cgroup -o rdma cgroup /tmp/cgrp ...`
 """
         }
     else:

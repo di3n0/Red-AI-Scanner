@@ -1,34 +1,49 @@
 
+import subprocess
+
 def run(target_url: str) -> dict:
     """
     Scenario 10: Crypto Miner
     """
     target = target_url.rstrip("/")
     
-    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
-    # or if the user explicitly targets this scenario's verification endpoint.
-    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    # Report Step: "kubectl get jobs", "kubectl describe job batch-check-job"
     
-    is_home = False
-    if ":1234" in target or "kubernetes-goat-home" in target:
-        is_home = True
+    try:
+        cmd = "kubectl get jobs --all-namespaces -o jsonpath='{range .items[*]}{.metadata.name}{\"\\n\"}{end}'"
+        jobs = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode()
+        
+        if "batch-check-job" in jobs:
+             return {
+                "success": True,
+                "output": f"""[+] VULNERABILITY DETECTED: Potential Crypto Miner Job
+Target: Cluster Jobs
+[VERIFIED] Found suspicious job 'batch-check-job'.
 
-    if is_home:
+[How to Exploit (Detailed Steps from Report)]
+1. Get Pod info: `kubectl get pods -l job-name=batch-check-job`
+2. Analyze Image: `kubectl get pod <pod> -o yaml`
+3. Reveal History: `docker history --no-trunc <image>`
+4. Find Flag/Miner: Look for hidden execution strings in layers.
+"""
+             }
+    except:
+        pass
+
+    if ":1234" in target or "kubernetes-goat-home" in target:
         return {
             "success": True,
             "output": """[+] VULNERABILITY: Configuration / Manual Review
 Target: {target}
-Scenario: Scenario 10: Crypto Miner
+[NOTE] Suspicious 'batch-check-job' not found automatically.
 
-[How to Exploit/Verify]
-Check high CPU usage pods.
-
-[How to Fix]
-Deploy Runtime Security (Falco) to block miner binaries.
+[How to Verify (from Report)]
+1. Run `kubectl get jobs` to list all jobs.
+2. Inspect any unknown jobs for mining behavior (high resource usage).
 """
         }
     else:
         return {
             "success": False,
-            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+            "output": f"[-] Target {target} is not the Dashboard and no suspicious jobs found."
         }

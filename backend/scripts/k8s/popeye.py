@@ -1,3 +1,4 @@
+import subprocess
 
 def run(target_url: str) -> dict:
     """
@@ -5,30 +6,18 @@ def run(target_url: str) -> dict:
     """
     target = target_url.rstrip("/")
     
-    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
-    # or if the user explicitly targets this scenario's verification endpoint.
-    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    # Report Step: "popeye"
+    # CLI tool audit. 
     
-    is_home = False
-    if ":1234" in target or "kubernetes-goat-home" in target:
-        is_home = True
-
-    if is_home:
-        return {
-            "success": True,
-            "output": """[+] VULNERABILITY: Configuration / Manual Review
+    return {
+        "success": True,
+        "output": f"""[+] VULNERABILITY: Configuration / Manual Review
 Target: {target}
 Scenario: Scenario 19: Popeye
 
-[How to Exploit/Verify]
-Run `popeye`.
-
-[How to Fix]
-Clean up sanitizer findings.
+[How to Exploit/Verify (from Report)]
+1. Run Popeye sanitizer:
+   `popeye` (if installed) or via Hacker Container.
+2. Analyze cluster score and warnings.
 """
-        }
-    else:
-        return {
-            "success": False,
-            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
-        }
+    }

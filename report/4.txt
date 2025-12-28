@@ -1,0 +1,113 @@
+🚀 Scenarios
+
+⎈ Container escape to the host system
+
+Welcome
+
+⎈ Container escape to the host
+system
+🙌 Overview
+This scenario showcases the common misconfigurations and one of the error-prone security
+issues in Kubernetes, container environments, and the general security world. Giving privileges
+that are not required for things always makes security worse. This is especially true in the
+containers and Kubernetes world. You can also apply this scenario further and beyond the
+container to other systems and services based on the configuration and setup of the cluster
+environments and resources. In this scenario you will see a privileged container escape to gain
+access to the host system.
+
+By the end of the scenario, you will understand and learn the following:
+1. Able to exploit the container and escape out of the docker container
+2. You will learn to test and exploit the misconfigured and privileged containers
+3. Learn about common misconfigurations and possible damage due to them for the
+containers, Kubernetes, and clusterized environments
+
+⚡️ The story
+
+Most of the monitoring, tracing, and debugging software requires extra privileges and
+capabilities to run. In this scenario, you will see a pod with extra capabilities and privileges
+including HostPath allowing you to gain access to the host system and provide Node level
+configuration to gain complete cluster compromise.
+
+INFO
+
+To get started with the scenario, navigate to http://127.0.0.1:1233
+
+🎯 Goals
+The goal of this scenario is to escape out of the running docker container on the host system
+using the available misconfigurations. The secondary goal is to use the host system-level
+access to gain other resources access and if possible even go beyond this container, node, and
+cluster-level access.
+
+TIP
+
+Gain access to the host system and obtain the node level kubeconfig file
+/var/lib/kubelet/kubeconfig , and query the Kubernetes nodes using the obtained
+
+configuration.
+
+Hints & Spoilers
+✨ Are you still in the container?
+✨ Escaped container?
+
+🎉 Solution & Walkthrough
+
+🎲 Method 1
+After performing the analysis, you can identify that this container has full privileges of the
+host system and allows privilege escalation. As well as /host-system is mounted.
+
+capsh --print
+
+mount
+
+Now you can explore the mounted file system by navigating to the /host-system path
+
+ls /host-system/
+
+You can gain access to the host system privileges using chroot
+
+chroot /host-system bash
+
+As you can see, now you can access all the host system resources like docker containers,
+configurations, etc.
+
+crictl pods
+
+The Kubernetes node configuration can be found at the default path, which is used by the
+node level kubelet to talk to the Kubernetes API Server. If you can use this configuration,
+you gain the same privileges as the Kubernetes node.
+
+cat /etc/kubernetes/admin.conf
+
+TIP
+
+You can use the available kubectl command-line utility to explore other resources using
+the obtained configuration. Also, you can leverage lots of other potential things by using
+the available utilities or downloading them as required.
+
+Using the kubelet configuration to list the Kubernetes cluster-wide resources
+
+kubectl --kubeconfig /etc/kubernetes/admin.conf get all -n kube-system
+
+INFO
+
+From here you can go beyond by performing the lateral moment and a post-exploitation
+based on the available setup, configuration, and resources
+
+e
+You are able to obtain the available nodes in the Kubernetes cluster by running the
+following command:
+
+kubectl --kubeconfig /etc/kubernetes/admin.conf get nodes
+
+Hooray 🥳 , now you can see that it returns the cluster nodes available as we have the
+privilege/permissions with obtained configuration to query the Kubernetes API server
+
+🔖 References
+Realworld case study of exploiting cap_sys_ptrace capability
+
+Abusing Privileged and Unprivileged Linux Containers - NCC Group Whitepaper
+Understanding and Hardening Linux Containers - NCC Group Whitepaper
+
+Edit this page
+
+

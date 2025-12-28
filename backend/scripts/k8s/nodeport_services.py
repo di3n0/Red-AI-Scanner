@@ -1,34 +1,44 @@
 
+import subprocess
+
 def run(target_url: str) -> dict:
     """
     Scenario 8: NodePort Services
     """
     target = target_url.rstrip("/")
     
-    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
-    # or if the user explicitly targets this scenario's verification endpoint.
-    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    # We use kubectl to verify this scenario automatically
+    # Step from Report: "Nmap ports 30000-32767 on nodes" or "kubectl get svc"
     
-    is_home = False
-    if ":1234" in target or "kubernetes-goat-home" in target:
-        is_home = True
+    try:
+        # Executing step: List services with NodePort
+        cmd = "kubectl get svc --all-namespaces -o jsonpath='{range .items[?(@.spec.type==\"NodePort\")]}{.metadata.name}{\" \"}{.spec.ports[*].nodePort}{\"\\n\"}{end}'"
+        result = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode()
+        
+        if result.strip():
+            return {
+                "success": True,
+                "output": f"""[+] VULNERABILITY DETECTED: NodePort Services Exposed
+Target: Cluster (via kubectl)
+[VERIFIED] Found services using NodePort:
+{result}
 
-    if is_home:
-        return {
-            "success": True,
-            "output": """[+] VULNERABILITY: Configuration / Manual Review
-Target: {target}
-Scenario: Scenario 8: NodePort Services
+[How to Exploit (Detailed Steps Executed)]
+1. Queried Kubernetes API for services of type 'NodePort'.
+2. Identified exposed ports (30000-32767).
 
-[How to Exploit/Verify]
-Nmap ports 30000-32767 on nodes.
-
-[How to Fix]
-Avoid NodePort for production. Use LoadBalancer or Ingress.
+[Next Steps]
+1. Connect to any Node IP on these ports to access the service.
 """
-        }
-    else:
-        return {
-            "success": False,
-            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
-        }
+            }
+        else:
+             return {"success": False, "output": "[-] No NodePort services found in the cluster."}
+             
+    except Exception as e:
+        # Fallback if kubectl fails
+        if ":1234" in target:
+            return {
+                "success": True, 
+                "output": "[+] Detected K8s Goat Environment. Manual Review Required (kubectl failed)."
+            }
+        return {"success": False, "output": f"[-] Failed to execute kubectl check: {e}"}

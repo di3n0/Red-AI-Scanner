@@ -1,0 +1,900 @@
+]633;E;for f in backend/scripts/k8s/*.py\x3b do echo "START_FILE: $f"\x3b cat "$f"\x3b echo "END_FILE"\x3b done > temp_scripts_analysis.txt;54b51b50-b4fe-4289-8cff-64a1db57b80a]633;CSTART_FILE: backend/scripts/k8s/container_escape.py
+
+import requests
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 4: Container escape to the host system
+    """
+    target = target_url.rstrip('/')
+    
+    is_vulnerable = False
+    details = ""
+
+    try:
+        r = requests.get(target, timeout=5)
+        # Port 1233 or specific text
+        if r.status_code == 200 and ("system-monitor" in r.text.lower() or ":1233" in target):
+             is_vulnerable = True
+             details = "Service appears to be the System Monitor application."
+    except:
+        pass
+
+    if is_vulnerable:
+        return {
+            "success": True,
+            "output": f"""[+] VULNERABILITY DETECTED: Container Escape Risk
+Target: {target}
+Details: {details}
+
+[How to Exploit]
+1. Access: Gain RCE via the exposed application (e.g., shell injection in query params).
+2. Check Privileges: Run `capsh --print`. Look for `CAP_SYS_ADMIN` or checks for `/dev/sda` access.
+3. Escape: If Privileged or CAP_SYS_ADMIN + host mount:
+   Command: `mkdir /tmp/cgrp && mount -t cgroup -o rdma cgroup /tmp/cgrp && mkdir /tmp/cgrp/x`
+   (Full 'release_agent' exploit chain)
+   Or simply mount host disk if available: `mount /dev/sda1 /mnt`
+
+[How to Fix]
+1. Security Context: Verify `securityContext.privileged` is set to `false`.
+2. Capabilities: Drop all capabilities (`ALL`) and add only needed ones.
+3. Sandbox: Use gVisor or Kata Containers for high-risk workloads.
+"""
+        }
+    else:
+        return {"success": False, "output": f"[-] Target {target} is not the System Monitor service."}
+END_FILE
+START_FILE: backend/scripts/k8s/crypto_miner.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 10: Crypto Miner
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 10: Crypto Miner
+
+[How to Exploit/Verify]
+Check high CPU usage pods.
+
+[How to Fix]
+Deploy Runtime Security (Falco) to block miner binaries.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/dind_exploitation.py
+
+import requests
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 2: DIND (docker-in-docker) exploitation
+    """
+    target = target_url.rstrip('/')
+    
+    # DIND Check: Usually Port 1231 in K8s Goat
+    # We check for a specific response characteristic of this app
+    is_vulnerable = False
+    details = ""
+
+    try:
+        # The DIND app usually has a specific title or response
+        r = requests.get(target, timeout=5)
+        if r.status_code == 200 and ("health-check" in r.text.lower() or "dind" in r.text.lower() or "pickup" in r.text.lower()):
+            is_vulnerable = True
+            details = "Service appears to be the DIND Health Check application."
+        # If strict port match is implied by user knowing the port:
+        elif ":1231" in target and r.status_code == 200:
+             is_vulnerable = True
+             details = "Target matches DIND service port (1231)."
+    except:
+        pass
+
+    if is_vulnerable:
+        return {
+            "success": True,
+            "output": f"""[+] VULNERABILITY DETECTED: DIND (Docker-in-Docker) Structure
+Target: {target}
+Details: {details}
+
+[How to Exploit]
+1. Access: If RCE is achieved (e.g., via Command Injection in this app), you are inside a container with Docker socket access.
+2. Socket Check: `ls -la /var/run/docker.sock`
+3. Escape: Use the mounted socket to instantiate a privileged container on the host.
+   Command: `docker -H unix:///var/run/docker.sock run -it --privileged --net=host -v /:/host ubuntu chroot /host bash`
+   Result: Full Host Access.
+
+[How to Fix]
+1. Avoid DIND: Do not verify/mount `/var/run/docker.sock` inside containers unless absolutely necessary.
+2. Use Alternatives: Use Kaniko or other tools for building images inside K8s without privileged mode.
+3. Policy: Enforce PSP/PSA to block privileged containers and host path mounts.
+"""
+        }
+    else:
+        return {"success": False, "output": f"[-] Target {target} is not the DIND Health Check service."}
+END_FILE
+START_FILE: backend/scripts/k8s/docker_cis.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 5: Docker CIS
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 5: Docker CIS
+
+[How to Exploit/Verify]
+Run `docker-bench-security` on the node.
+
+[How to Fix]
+Follow CIS Benchmark recommendations (Audit, Permissions, Logging).
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/dos_resources.py
+
+import requests
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 13: DoS the Memory/CPU resources
+    """
+    target = target_url.rstrip('/')
+    
+    is_vulnerable = False
+    details = ""
+
+    try:
+        r = requests.get(target, timeout=5)
+        # Port 1236 check
+        if r.status_code == 200 and ("hunger-check" in r.text.lower() or ":1236" in target):
+             is_vulnerable = True
+             details = "Service appears to be the Hunger Check (DoS) application."
+    except:
+        pass
+
+    if is_vulnerable:
+        return {
+            "success": True,
+            "output": f"""[+] VULNERABILITY DETECTED: Unbounded Resource Consumption (DoS)
+Target: {target}
+Details: {details}
+
+[How to Exploit]
+1. Stress Test: Use stress-generation tools (like `stress-ng` inside the container or generic HTTP flooding if app supports it).
+2. Resource Hog: The application likely does not have ResourceLimits.
+   Action: Send requests that trigger high CPU/Memory computation.
+3. Observability: Watch the node status. `kubectl get nodes`.
+   Result: The node might become NotReady, or other pods might be evicted (OOMKilled).
+
+[How to Fix]
+1. Resource Quotas: Apply ResourceQuotas to namespaces.
+2. Limits: Define `resources.requests` and `resources.limits` in the Pod spec.
+   Example:
+   ```yaml
+   resources:
+     limits:
+       cpu: "500m"
+       memory: "512Mi"
+   ```
+3. LimitRanges: Set default limits for containers in the namespace.
+"""
+        }
+    else:
+        return {"success": False, "output": f"[-] Target {target} is not the DoS Vulnerable service."}
+END_FILE
+START_FILE: backend/scripts/k8s/env_info.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 12: Env Info
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 12: Env Info
+
+[How to Exploit/Verify]
+Inspect env vars (printenv) in checking pods.
+
+[How to Fix]
+Use K8s Secrets. Do not pass sensitive data in plain ENV.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/falco.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 18: Falco
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 18: Falco
+
+[How to Exploit/Verify]
+Verify Falco is running.
+
+[How to Fix]
+Ensure Security Monitoring is active.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/hacker_container.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 14: Hacker Container
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 14: Hacker Container
+
+[How to Exploit/Verify]
+Identify malicious pods (hacker-container).
+
+[How to Fix]
+Image Scanning, Admission Controllers (OPA Gatekeeper).
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/helm_v2.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 9: Helm v2
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 9: Helm v2
+
+[How to Exploit/Verify]
+Check for 'tiller-deploy' deployment.
+
+[How to Fix]
+Upgrade to Helm v3 (Tiller-less).
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/hidden_layers.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 15: Hidden Layers
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 15: Hidden Layers
+
+[How to Exploit/Verify]
+Analyze image layers (dive).
+
+[How to Fix]
+Multi-stage builds. Do not include secrets in intermediate layers.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/k8s_cis.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 6: Kubernetes CIS
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 6: Kubernetes CIS
+
+[How to Exploit/Verify]
+Run `kube-bench` job.
+
+[How to Fix]
+Remediate Failed items in kube-bench report.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/kubeaudit.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 17: KubeAudit
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 17: KubeAudit
+
+[How to Exploit/Verify]
+Run `kubeaudit all`.
+
+[How to Fix]
+Apply KubeAudit recommendations.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/kyverno.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 22: Kyverno
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 22: Kyverno
+
+[How to Exploit/Verify]
+Check Policy Reports.
+
+[How to Fix]
+Enforce Pod Security Standards via Kyverno.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/namespace_bypass.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 11: Namespace Bypass
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 11: Namespace Bypass
+
+[How to Exploit/Verify]
+Test access to other namespace services.
+
+[How to Fix]
+NetworkPolicies (Deny All by default).
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/nodeport_services.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 8: NodePort Services
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 8: NodePort Services
+
+[How to Exploit/Verify]
+Nmap ports 30000-32767 on nodes.
+
+[How to Fix]
+Avoid NodePort for production. Use LoadBalancer or Ingress.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/nsp_boundary.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 20: NSP Boundary
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 20: NSP Boundary
+
+[How to Exploit/Verify]
+Verify NetworkPolicies.
+
+[How to Fix]
+Implement default-deny NetworkPolicies.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/popeye.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 19: Popeye
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 19: Popeye
+
+[How to Exploit/Verify]
+Run `popeye`.
+
+[How to Fix]
+Clean up sanitizer findings.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/private_registry.py
+
+import requests
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 7: Attacking private registry
+    """
+    target = target_url.rstrip('/')
+    
+    is_vulnerable = False
+    details = ""
+
+    try:
+        # Registry usually responds at /v2/
+        check_url = f"{target}/v2/"
+        r = requests.get(check_url, timeout=5)
+        
+        # Registry returns 200 or 401 on /v2/ endpoint usually
+        if r.status_code in [200, 401, 403] and ("docker" in r.headers.get("Docker-Distribution-Api-Version", "").lower() or ":1235" in target):
+             is_vulnerable = True
+             details = f"Service responded as a Docker Registry (Code {r.status_code})."
+    except:
+        pass
+
+    if is_vulnerable:
+        return {
+            "success": True,
+            "output": f"""[+] VULNERABILITY DETECTED: Private Registry Exposure
+Target: {target}
+Details: {details}
+
+[How to Exploit]
+1. Enumeration: List repositories.
+   Command: `curl {target}/v2/_catalog`
+2. Tags: List tags for a repo.
+   Command: `curl {target}/v2/<repo_name>/tags/list`
+3. Pull: Pull the image locally to inspect.
+   Command: `docker pull localhost:1235/<repo_name>:<tag>`
+4. Inspect: `docker run -it <image> sh` or `dive <image>` to find hardcoded secrets.
+
+[How to Fix]
+1. Authentication: Enable TLS and Basic Auth for the registry.
+2. Network access: Do not expose registry outside the cluster/VPN. Use `ClusterIP`.
+3. Scanning: Regularly scan images for vulnerable packages and secrets.
+"""
+        }
+    else:
+        return {"success": False, "output": f"[-] Target {target} does not identify as a Docker Registry."}
+END_FILE
+START_FILE: backend/scripts/k8s/rbac_misconfig.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 16: RBAC Misconfig
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 16: RBAC Misconfig
+
+[How to Exploit/Verify]
+Check permissions (kubectl auth can-i).
+
+[How to Fix]
+Least Privilege Principle. Remove 'cluster-admin' from unnecessary SAs.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/sensitive_keys.py
+
+import requests
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 1: Sensitive keys in codebases
+    Target Logic: strict check against provided target_url
+    """
+    target = target_url.rstrip('/')
+    
+    # Check 1: Direct .env access
+    env_url = f"{target}/.env"
+    env_exposed = False
+    env_content = ""
+    
+    try:
+        r_env = requests.get(env_url, timeout=5)
+        if r_env.status_code == 200 and ("=" in r_env.text or "AWS" in r_env.text or "KEY" in r_env.text):
+            env_exposed = True
+            env_content = r_env.text
+    except:
+        pass
+
+    # Check 2: Exposed .git directory
+    git_url = f"{target}/.git/config"
+    git_exposed = False
+    details = ""
+
+    try:
+        r = requests.get(git_url, timeout=5)
+        if r.status_code == 200 and ("[core]" in r.text or "repositoryformatversion" in r.text):
+            git_exposed = True
+            details = f"Found exposed .git configuration at {git_url}"
+        elif r.status_code == 200 and not env_exposed: # Only fallback if we haven't found env yet
+             # Fallback for lax environments, but warn
+             git_exposed = True
+             details = f"Found accessible path at {git_url} (Content check uncertain but 200 OK)"
+    except:
+        pass
+
+    if env_exposed:
+        return {
+            "success": True,
+            "output": f"""[+] VULNERABILITY DETECTED: Sensitive Keys (Direct .env Access)
+Target: {target}
+[CRITICAL] Found .env file directly accessible!
+Content Preview:
+{env_content[:200]}...
+
+[How to Exploit]
+1. You have already exploited it! The secrets are in the output above.
+2. Use these keys to access cloud resources or internal services.
+"""
+        }
+    elif git_exposed:
+        return {
+            "success": True,
+            "output": f"""[+] VULNERABILITY DETECTED: Sensitive Keys (Exposed .git)
+Target: {target}
+Details: {details}
+
+[How to Exploit]
+1. **Discovery**: The script verified that `{target}/.git/config` is accessible (HTTP 200).
+2. **Tools**: Use `git-dumper` to download the entire repository structure.
+   Command: `git-dumper {target}/.git output_directory`
+3. **Investigation**:
+   - Run `git log` to see commit history.
+   - Look for commit messages like "update env" or "add secrts".
+   - Using `git show <commit_id>` you will likely find the .env file that was deleted from current HEAD but exists in history.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} does not appear to have exposed .git directory."
+        }
+END_FILE
+START_FILE: backend/scripts/k8s/ssrf_k8s.py
+
+import requests
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 3: SSRF in the Kubernetes (K8S) world
+    """
+    target = target_url.rstrip('/')
+    
+    is_vulnerable = False
+    details = ""
+
+    try:
+        # SSRF app (internal-proxy) on 1232 often reflects input or shows "K8S Goat" style
+        r = requests.get(target, timeout=5)
+        # Unique identifier for the SSRF scenario app
+        if r.status_code == 200 and ("internal-proxy" in r.text.lower() or "galery" in r.text.lower() or ":1232" in target):
+            is_vulnerable = True
+            details = "Service appears to be the Internal Proxy application (SSRF Target)."
+    except:
+        pass
+
+    if is_vulnerable:
+        return {
+            "success": True,
+            "output": f"""[+] VULNERABILITY DETECTED: SSRF Potential
+Target: {target}
+Details: {details}
+
+[How to Exploit]
+1. Identification: Observe the application takes a URL verification parameter (e.g., `?url=...`).
+2. Cloud Metadata: Attempt to access Cloud Metadata service.
+   AWS: `?url=http://169.254.169.254/latest/meta-data/`
+   GCP: `?url=http://metadata.google.internal/computeMetadata/v1/`
+3. K8s Internal: Scan internal K8s services (e.g., Etcd, Kube-API).
+   Payload: `?url=http://kubernetes.default.svc`
+
+[How to Fix]
+1. Input Validation: Whitelist allowed domains/protocols for the proxy.
+2. Network Policy: Use Kubernetes NetworkPolicies to restrict the pod's egress traffic (deny access to 169.254.169.254 or internal CIDRs).
+3. Service Mesh: Use Istio/Linkerd to control egress traffic.
+"""
+        }
+    else:
+        return {"success": False, "output": f"[-] Target {target} is not the SSRF Vulnerable service."}
+END_FILE
+START_FILE: backend/scripts/k8s/tetragon.py
+
+def run(target_url: str) -> dict:
+    """
+    Scenario 21: Tetragon
+    """
+    target = target_url.rstrip("/")
+    
+    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
+    # or if the user explicitly targets this scenario's verification endpoint.
+    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    
+    is_home = False
+    if ":1234" in target or "kubernetes-goat-home" in target:
+        is_home = True
+
+    if is_home:
+        return {
+            "success": True,
+            "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+Scenario: Scenario 21: Tetragon
+
+[How to Exploit/Verify]
+Check Tetragon events.
+
+[How to Fix]
+Enforce process execution policies.
+"""
+        }
+    else:
+        return {
+            "success": False,
+            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+        }
+END_FILE

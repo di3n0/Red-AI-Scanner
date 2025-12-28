@@ -1,34 +1,49 @@
 
+import subprocess
+
 def run(target_url: str) -> dict:
     """
     Scenario 6: Kubernetes CIS
     """
     target = target_url.rstrip("/")
     
-    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
-    # or if the user explicitly targets this scenario's verification endpoint.
-    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    # Report Step: "kubectl apply -f ...", "kubectl logs -f kube-bench-node-xxxxx"
     
-    is_home = False
-    if ":1234" in target or "kubernetes-goat-home" in target:
-        is_home = True
+    try:
+        cmd = "kubectl get pods -l job-name=kube-bench-node -o jsonpath='{.items[0].metadata.name}'"
+        pod_name = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode().strip()
+        
+        if pod_name:
+             return {
+                "success": True,
+                "output": f"""[+] VULNERABILITY: Configuration / Manual Review
+Target: Pod {pod_name}
+[VERIFIED] Kube-Bench Job is running.
 
-    if is_home:
+[How to Exploit (Manual Steps from Report)]
+1. Check logs for the benchmark results:
+   `kubectl logs -f {pod_name}`
+2. Review FAILED status in the output.
+"""
+             }
+    except:
+        pass
+
+    if ":1234" in target or "kubernetes-goat-home" in target:
         return {
             "success": True,
             "output": """[+] VULNERABILITY: Configuration / Manual Review
 Target: {target}
-Scenario: Scenario 6: Kubernetes CIS
+[NOTE] Kube-Bench Job not detected running.
 
-[How to Exploit/Verify]
-Run `kube-bench` job.
-
-[How to Fix]
-Remediate Failed items in kube-bench report.
+[How to Verify (from Report)]
+1. Deploy the benchmark job:
+   `kubectl apply -f scenarios/kube-bench-security/node-job.yaml`
+2. Check logs of the created pod.
 """
         }
     else:
         return {
             "success": False,
-            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+            "output": f"[-] Target {target} is not the Dashboard and Kube-Bench is not running."
         }

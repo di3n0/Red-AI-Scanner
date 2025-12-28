@@ -1,0 +1,131 @@
+🚀 Scenarios
+⎈ Cilium Tetragon - eBPF-based Security Observability and Runtime Enforcement
+
+Welcome
+
+⎈ Cilium Tetragon - eBPF-based
+Security Observability and
+Runtime Enforcement
+🙌 Overview
+The containers and their infrastructure are immutable. It means it's very difficult to detect
+certain attacks, vulnerabilities, and detections using traditional tools and technologies. In this
+scenario, we will see how we can leverage the popular open-source tool like Cilium Tetragon to
+detect and perform runtime security monitoring using the tracingpolicy in action.
+
+By the end of the scenario, we will understand and learn the following
+1. Deploying the helm chart into the Kubernetes cluster
+2. Performing the log analysis and detection of security events in the Kubernetes Cluster
+3. Use, analyze and detect security issues in near real-time using Cilium Tetragon
+
+⚡️ The story
+
+This scenario is to deploy runtime security monitoring & detection for containers and
+Kubernetes resources. Also, explore and see how we can detect certain issues and perform
+detections using tracingpolicy based on attacker triggers.
+
+NOTE
+
+Make sure you run the following deployment using Helm with v3. Refer to helm
+
+installation
+
+INFO
+
+To deploy the Cilium Tetragon helm chart run the following commands
+helm repo add cilium https://helm.cilium.io
+
+helm repo update
+
+helm install tetragon cilium/tetragon -n kube-system
+
+You can verify that the Tetragon pods are in running state by running the following
+command
+kubectl rollout status -n kube-system ds/tetragon -w
+
+🎯 Goal
+TIP
+
+Deploy the Cilium Tetragon and detect security events in near real-time using the
+tracingpolicy and events.
+
+Hints & Spoilers
+✨ Want to know more?
+
+🎉 Solution & Walkthrough
+🎲 Method 1
+INFO
+
+Cilium’s new Tetragon component enables powerful realtime, eBPF-based Security
+Observability and Runtime Enforcement.
+
+Tetragon detects and is able to react to security-significant events, such as
+
+Process execution events
+System call activity
+I/O activity including network & file access
+When used in a Kubernetes environment, Tetragon is Kubernetes-aware - that is, it
+understands Kubernetes identities such as namespaces, pods and so-on - so that security event
+detection can be configured in relation to individual workloads.
+Get more details about the Tetragon deployment by running the following command
+
+kubectl get pods -n kube-system --selector app.kubernetes.io/instance=tetragon
+
+Manually obtaining the logs from the Tetragon using the following command
+
+kubectl logs -n kube-system -l app.kubernetes.io/name=tetragon -c exportstdout -f
+
+Now, let's use the system-monitor pod and try privileges escalation to the host system and
+see if that detects by Tetragon
+
+export POD_NAME=$(kubectl get pods -l "app=system-monitor" -o jsonpath="
+{.items[0].metadata.name}")
+kubectl exec -it $POD_NAME bash
+
+Let's read the sensitive file /etc/shadow
+
+cat /etc/shadow
+
+You can also see these events in a nicer way using the official tetra cli client in your local
+system. Refer to the documentation for specific binary as per your OS and Architecture
+
+wget https://github.com/cilium/tetragon/releases/download/v0.9.0/tetra-linuxamd64.tar.gz
+tar -xvzf tetra-linux-amd64.tar.gz
+
+Now you can run the following command to pass the output of the Tetragon events to
+tetra cli locally to see in a nicer way
+
+kubectl logs -n kube-system -l app.kubernetes.io/name=tetragon -c exportstdout -f | ./tetra getevents -o compact --namespace default --pod systemmonitor-deployment-*
+
+TIP
+
+tetra cli provides the context awareness of the Kubernetes, namespaces and other
+
+details like processes, etc. When querying you can even limit them to processes,
+namespace, pod, even regex supported.
+
+Let's take a spin for detecting the privilege escalation attacks using the Tetragon. You can
+perform the container escape using the system-monitor pod to gain host system access
+by running the following commands
+
+# Get into the system-monitor pod
+export POD_NAME=$(kubectl get pods -l "app=system-monitor" -o jsonpath="
+{.items[0].metadata.name}")
+kubectl exec -it $POD_NAME bash
+
+# Exploit to gain the host system access using nsenter
+nsenter -t 1 -m --uts --ipc --pid
+
+As you can see following, Tetragon in action detecting these attacks in near real-time
+
+kubectl logs -n kube-system -l app.kubernetes.io/name=tetragon -c exportstdout -f | ./tetra getevents -o compact --namespace default --pod systemmonitor-deployment-*
+
+Hooray 🥳 , now we can see that Tetragon detected the attack and notified using the
+events
+
+🔖 References
+https://github.com/cilium/tetragon
+https://tetragon.cilium.io
+
+Edit this page
+
+

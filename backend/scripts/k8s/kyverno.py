@@ -1,3 +1,4 @@
+import subprocess
 
 def run(target_url: str) -> dict:
     """
@@ -5,30 +6,45 @@ def run(target_url: str) -> dict:
     """
     target = target_url.rstrip("/")
     
-    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
-    # or if the user explicitly targets this scenario's verification endpoint.
-    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    # Report Step: "helm install kyverno", "kubectl get clusterpolicies"
     
-    is_home = False
-    if ":1234" in target or "kubernetes-goat-home" in target:
-        is_home = True
+    try:
+        cmd = "kubectl get clusterpolicies"
+        result = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode()
+        
+        # If we see output other than "No resources found", or header
+        if "No resources found" not in result:
+             return {
+                "success": True,
+                "output": f"""[+] VULNERABILITY DETECTED: Kyverno Policy Engine
+Target: Cluster Policies
+[VERIFIED] Kyverno Policies found.
+{result}
 
-    if is_home:
+[How to Exploit/Verify (Detailed Steps from Report)]
+1. Deploy Policy: `kubectl apply -f kyverno-block-pod-exec.yaml`
+2. Test: Try to Exec into blocked namespace.
+   `kubectl exec ...` -> Denied.
+"""
+             }
+    except:
+        pass
+
+    if ":1234" in target or "kubernetes-goat-home" in target:
         return {
             "success": True,
             "output": """[+] VULNERABILITY: Configuration / Manual Review
 Target: {target}
-Scenario: Scenario 22: Kyverno
+[NOTE] Kyverno Policies not actively detected.
 
-[How to Exploit/Verify]
-Check Policy Reports.
-
-[How to Fix]
-Enforce Pod Security Standards via Kyverno.
+[How to Verify (from Report)]
+1. Install Kyverno.
+2. Apply test policies (e.g. Disallow Root).
+3. Validate enforcement.
 """
         }
     else:
         return {
             "success": False,
-            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+            "output": f"[-] Target {target} is not the Dashboard and Kyverno not configured."
         }

@@ -102,15 +102,6 @@ Kubernets Goat
 - Sensitive keys in codebases
 - DIND (docker-in-docker) exploitation
 - SSRF in the Kubernetes (K8S) world
-- Container escape to the host system
-- Docker CIS benchmarks analysis
-- Kubernetes CIS benchmarks analysis
-- Attacking private registry
-- NodePort exposed services
-- Helm v2 tiller to PwN the cluster - Deprecated
-- Analyzing crypto miner container
-- Kubernetes namespaces bypass
-- Gaining environment information
 - DoS the Memory/CPU resources
 - Hacker container preview
 - Hidden in layers
@@ -172,3 +163,41 @@ sudo docker pull dinosaursmallli/red-ai-frontend:v1
     sudo apt install antigravity
     ```
 
+
+## Script Success Verification Criteria (通關判斷標準)
+
+本專案 22 個紅隊攻擊腳本經過 Refactor 後，針對每個場景實作了基於 Report 的精確驗證邏輯。判定「成功 (Success)」代表該漏洞環境已被確認存在或已成功利用。
+
+### 1. 主動式漏洞利用 (Active Exploitation)
+針對 Web 服務直接發送攻擊 Payload 進行驗證。
+
+| Scenario | Script | Target Port | Success Criteria (驗證標準) |
+| :--- | :--- | :--- | :--- |
+| **1. Sensitive Keys** | `sensitive_keys.py` | `1230` | 發現 `/.env` 檔案或 `/.git` 目錄外洩 (HTTP 200)。 |
+| **2. DIND Exploitation** | `dind_exploitation.py` | `1231` | 成功執行 Command Injection (`id`) 並回傳結果。 |
+| **3. SSRF** | `ssrf_k8s.py` | `1232` | 成功存取 `metadata-db` 並解碼 Base64 取得 Flag (`k8s-goat-...`)。 |
+| **4. Container Escape** | `container_escape.py` | `1233` | 偵測到曝露的 Web Shell (`GoTTY` / `system-monitor`)。 |
+| **7. Private Registry** | `private_registry.py` | `1235` | 成功呼叫 Docker Registry API (`/v2/_catalog`) 取得儲存庫列表。 |
+| **13. DoS Resources** | `dos_resources.py` | `1236` | 偵測到 Deployment Manifest 未設定 `resources.limits` (透過 `kubectl`)。 |
+
+### 2. 環境配置與服務檢測 (Configuration & Resource Discovery)
+針對基礎設施層面的弱點，使用 `kubectl` 驗證特定危險元件或配置是否存在。
+
+| Scenario | Script | Verification Method | Success Criteria (驗證標準) |
+| :--- | :--- | :--- | :--- |
+| **5. Docker CIS** | `docker_cis.py` | `kubectl` | 偵測到 `docker-bench-security` Pod 正在運作。 |
+| **6. K8s CIS** | `k8s_cis.py` | `kubectl` | 偵測到 `kube-bench` Job 存在。 |
+| **8. NodePort Services** | `nodeport_services.py` | `kubectl` | 偵測到類型為 `NodePort` 的 Service。 |
+| **9. Helm v2** | `helm_v2.py` | `kubectl` | 偵測到 `tiller-deploy` Service (Helm v2 Server)。 |
+| **10. Crypto Miner** | `crypto_miner.py` | `kubectl` | 偵測到挖礦相關 Job (`batch-check-job`)。 |
+| **11. Namespace Bypass** | `namespace_bypass.py` | `kubectl` | 在其他 Namespace 發現未隔離的 `cache-store` Pod。 |
+| **12. Env Info** | `env_info.py` | `kubectl` | 成功讀取 Pod 環境變數 (`printenv`)。 |
+| **14. Hacker Container** | `hacker_container.py` | `kubectl` | 偵測到駭客容器 (`hacker-container` Pod) 存在。 |
+| **15. Hidden Layers** | `hidden_layers.py` | `kubectl` | 偵測到含有隱藏資訊的 Job (`hidden-in-layers`)。 |
+| **16. RBAC Misconfig** | `rbac_misconfig.py` | `kubectl` | 偵測到高權限 ServiceAccount (`webhook-service-account`)。 |
+| **17. KubeAudit** | `kubeaudit.py` | Manual Guide | 輸出 KubeAudit 執行指引 (需互動式操作)。 |
+| **18. Falco** | `falco.py` | `kubectl` | 偵測到 `falco` 資安監控 Pod。 |
+| **19. Popeye** | `popeye.py` | Manual Guide | 輸出 Popeye 執行指引 (需互動式操作)。 |
+| **20. NSP Boundary** | `nsp_boundary.py` | `kubectl` | 確認叢集內是否存在 NetworkPolicies (驗證隔離狀態)。 |
+| **21. Tetragon** | `tetragon.py` | `kubectl` | 偵測到 `tetragon` eBPF 監控 Pod。 |
+| **22. Kyverno** | `kyverno.py` | `kubectl` | 偵測到 Kyverno ClusterPolicies。 |

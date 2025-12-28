@@ -1,34 +1,49 @@
 
+import subprocess
+
 def run(target_url: str) -> dict:
     """
     Scenario 9: Helm v2
     """
     target = target_url.rstrip("/")
     
-    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
-    # or if the user explicitly targets this scenario's verification endpoint.
-    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    # Report Step: "telnet tiller-deploy.kube-system 44134" or "helm version"
+    # We check if Tiller pod/service exists
     
-    is_home = False
-    if ":1234" in target or "kubernetes-goat-home" in target:
-        is_home = True
+    try:
+        cmd = "kubectl get pods -n kube-system -l name=tiller -o jsonpath='{.items[0].metadata.name}'"
+        pod_name = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode().strip()
+        
+        if pod_name:
+             return {
+                "success": True,
+                "output": f"""[+] VULNERABILITY DETECTED: Helm v2 (Tiller)
+Target: Pod {pod_name}
+[VERIFIED] Found Tiller service in kube-system!
 
-    if is_home:
-        return {
-            "success": True,
-            "output": """[+] VULNERABILITY: Configuration / Manual Review
-Target: {target}
-Scenario: Scenario 9: Helm v2
-
-[How to Exploit/Verify]
-Check for 'tiller-deploy' deployment.
-
-[How to Fix]
-Upgrade to Helm v3 (Tiller-less).
+[How to Exploit (Detailed Steps from Report)]
+1. Connect to Tiller service:
+   `telnet tiller-deploy.kube-system 44134`
+2. Use helm with Tiller host:
+   `helm --host tiller-deploy.kube-system:44134 install --name pwnchart /pwnchart`
+3. Result: Gain cluster-admin access.
 """
-        }
+             }
+    except:
+        pass
+
+    if ":1234" in target or "kubernetes-goat-home" in target:
+         # Fallback if manual verification needed but automated check failed
+         return {
+            "success": True,
+             "output": """[+] VULNERABILITY: Configuration / Manual Review
+Target: {target}
+[NOTE] Tiller Pod not found by script.
+
+[How to Verify (from Report)]
+1. Check for Tiller: `kubectl get pods -n kube-system -l name=tiller`
+2. If found, exploit via Helm v2 binary.
+"""
+         }
     else:
-        return {
-            "success": False,
-            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
-        }
+        return {"success": False, "output": f"[-] Target {target} is not the Dashboard and Tiller not found."}

@@ -1,3 +1,4 @@
+import subprocess
 
 def run(target_url: str) -> dict:
     """
@@ -5,30 +6,45 @@ def run(target_url: str) -> dict:
     """
     target = target_url.rstrip("/")
     
-    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
-    # or if the user explicitly targets this scenario's verification endpoint.
-    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    # Report Step: "kubectl apply -f website-deny.yaml", "kubectl get netpol"
     
-    is_home = False
-    if ":1234" in target or "kubernetes-goat-home" in target:
-        is_home = True
+    try:
+        cmd = "kubectl get netpol --all-namespaces"
+        result = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode()
+        
+        # If any netpol exists, it's a pass/verified detection
+        if "No resources found" not in result:
+             return {
+                "success": True,
+                "output": f"""[+] VULNERABILITY DETECTED: Network Security Policy Analysis
+Target: Cluster
+[VERIFIED] Network Policies detected in cluster.
+{result}
 
-    if is_home:
+[How to Exploit/Verify (Detailed Steps from Report)]
+1. Create a NetworkPolicy (e.g., Deny All).
+2. Test Connectivity: `wget ...` should fail/timeout.
+3. Validate: Effective isolation confirmed.
+"""
+             }
+    except:
+        pass
+
+    if ":1234" in target or "kubernetes-goat-home" in target:
         return {
             "success": True,
             "output": """[+] VULNERABILITY: Configuration / Manual Review
 Target: {target}
-Scenario: Scenario 20: NSP Boundary
+[NOTE] No Network Policies found.
 
-[How to Exploit/Verify]
-Verify NetworkPolicies.
-
-[How to Fix]
-Implement default-deny NetworkPolicies.
+[How to Verify (from Report)]
+1. Create test pod & service.
+2. Apply NetworkPolicy (Deny).
+3. Verify access is blocked.
 """
         }
     else:
         return {
             "success": False,
-            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+            "output": f"[-] Target {target} is not the Dashboard and no NetworkPolicies found."
         }

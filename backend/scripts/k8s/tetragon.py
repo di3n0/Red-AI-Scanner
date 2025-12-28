@@ -1,3 +1,4 @@
+import subprocess
 
 def run(target_url: str) -> dict:
     """
@@ -5,30 +6,44 @@ def run(target_url: str) -> dict:
     """
     target = target_url.rstrip("/")
     
-    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
-    # or if the user explicitly targets this scenario's verification endpoint.
-    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    # Report Step: "helm install tetragon", "kubectl get pods ... app=tetragon"
     
-    is_home = False
-    if ":1234" in target or "kubernetes-goat-home" in target:
-        is_home = True
+    try:
+        cmd = "kubectl get pods -n kube-system -l app.kubernetes.io/name=tetragon -o jsonpath='{.items[0].metadata.name}'"
+        pod_name = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode().strip()
+        
+        if pod_name:
+             return {
+                "success": True,
+                "output": f"""[+] VULNERABILITY DETECTED: Tetragon Observability
+Target: Pod {pod_name}
+[VERIFIED] Tetragon is running in kube-system.
 
-    if is_home:
-        return {
+[How to Exploit/Test (Detailed Steps from Report)]
+1. Trigger Event: Privileged execution or file access.
+   `nsenter -t 1 ...` or `cat /etc/shadow`
+2. Check Logs:
+   `kubectl logs ... -c exportstdout`
+3. Result: Tetragon detects process execution/ syscalls.
+"""
+             }
+    except:
+        pass
+
+    if ":1234" in target or "kubernetes-goat-home" in target:
+         return {
             "success": True,
             "output": """[+] VULNERABILITY: Configuration / Manual Review
 Target: {target}
-Scenario: Scenario 21: Tetragon
+[NOTE] Tetragon deployment not detected.
 
-[How to Exploit/Verify]
-Check Tetragon events.
-
-[How to Fix]
-Enforce process execution policies.
+[How to Verify (from Report)]
+1. Install Tetragon: `helm install tetragon ...`
+2. Validate logs for runtime security events.
 """
-        }
+         }
     else:
         return {
             "success": False,
-            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+            "output": f"[-] Target {target} is not the Dashboard and Tetragon not found."
         }

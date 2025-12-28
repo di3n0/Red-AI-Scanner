@@ -11,14 +11,23 @@ def run(target_url: str) -> dict:
     details = ""
 
     try:
-        # Registry usually responds at /v2/
-        check_url = f"{target}/v2/"
-        r = requests.get(check_url, timeout=5)
+        # Step from Report: 
+        # curl http://127.0.0.1:1235/v2/
+        # curl http://127.0.0.1:1235/v2/_catalog
         
-        # Registry returns 200 or 401 on /v2/ endpoint usually
-        if r.status_code in [200, 401, 403] and ("docker" in r.headers.get("Docker-Distribution-Api-Version", "").lower() or ":1235" in target):
+        catalog_url = f"{target}/v2/_catalog"
+        r = requests.get(catalog_url, timeout=5)
+        
+        # Success if we can list repositories or if we see the Docker registry header
+        if r.status_code == 200 and "repositories" in r.text:
              is_vulnerable = True
-             details = f"Service responded as a Docker Registry (Code {r.status_code})."
+             details = "Successfully accessed Private Registry Catalog (Unauthenticated)."
+             evidence = f"Repositories: {r.text}"
+        elif r.status_code == 401 and "Docker-Distribution-Api-Version" in r.headers:
+             is_vulnerable = True
+             details = "Registry exposed but requires auth (Private)."
+             evidence = "Header: Docker-Distribution-Api-Version detected."
+
     except:
         pass
 
@@ -27,22 +36,19 @@ def run(target_url: str) -> dict:
             "success": True,
             "output": f"""[+] VULNERABILITY DETECTED: Private Registry Exposure
 Target: {target}
+[VERIFIED] Registry is accessible!
 Details: {details}
+Evidence: {evidence}
 
-[How to Exploit]
-1. Enumeration: List repositories.
-   Command: `curl {target}/v2/_catalog`
-2. Tags: List tags for a repo.
-   Command: `curl {target}/v2/<repo_name>/tags/list`
-3. Pull: Pull the image locally to inspect.
-   Command: `docker pull localhost:1235/<repo_name>:<tag>`
-4. Inspect: `docker run -it <image> sh` or `dive <image>` to find hardcoded secrets.
+[How to Exploit (Detailed Steps Executed)]
+1. Sent GET request to `/v2/_catalog`.
+2. Verified response contains 'repositories' list.
 
-[How to Fix]
-1. Authentication: Enable TLS and Basic Auth for the registry.
-2. Network access: Do not expose registry outside the cluster/VPN. Use `ClusterIP`.
-3. Scanning: Regularly scan images for vulnerable packages and secrets.
+[Next Steps from Report]
+1. List tags: `curl {target}/v2/<repo_name>/tags/list`
+2. Pull image: `docker pull localhost:1235/<repo_name>:<tag>`
+3. Inspect layers for secrets: `grep -i env` in manifest.
 """
         }
     else:
-        return {"success": False, "output": f"[-] Target {target} does not identify as a Docker Registry."}
+        return {"success": False, "output": f"[-] Target {target} catalog not accessible or not a registry."}

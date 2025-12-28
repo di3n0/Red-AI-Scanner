@@ -1,3 +1,4 @@
+import subprocess
 
 def run(target_url: str) -> dict:
     """
@@ -5,30 +6,43 @@ def run(target_url: str) -> dict:
     """
     target = target_url.rstrip("/")
     
-    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
-    # or if the user explicitly targets this scenario's verification endpoint.
-    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    # Report Step: "kubectl get jobs", "docker history ...", "dive ..."
     
-    is_home = False
-    if ":1234" in target or "kubernetes-goat-home" in target:
-        is_home = True
+    try:
+        cmd = "kubectl get jobs --all-namespaces -l app=hidden-in-layers -o jsonpath='{.items[0].metadata.name}'"
+        job_name = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode().strip()
+        
+        if job_name:
+             return {
+                "success": True,
+                "output": f"""[+] VULNERABILITY DETECTED: Hidden Information in Layers
+Target: Job {job_name}
+[VERIFIED] Found 'hidden-in-layers' job.
 
-    if is_home:
+[How to Exploit (Detailed Steps from Report)]
+1. Get Image Name: `madhuakula/k8s-goat-hidden-in-layers`
+2. Analyze History: `docker history --no-trunc <image>`
+3. Deep Dive: `dive <image>` or export tar `docker save ...`
+4. Extract Secret: `tar -xvf layer.tar; cat root/secret.txt`
+"""
+             }
+    except:
+        pass
+
+    if ":1234" in target or "kubernetes-goat-home" in target:
         return {
             "success": True,
             "output": """[+] VULNERABILITY: Configuration / Manual Review
 Target: {target}
-Scenario: Scenario 15: Hidden Layers
+[NOTE] 'hidden-in-layers' job not found.
 
-[How to Exploit/Verify]
-Analyze image layers (dive).
-
-[How to Fix]
-Multi-stage builds. Do not include secrets in intermediate layers.
+[How to Verify (from Report)]
+1. Check for jobs: `kubectl get jobs`.
+2. Inspect images for secrets using `dive`.
 """
         }
     else:
         return {
             "success": False,
-            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
+            "output": f"[-] Target {target} is not the Dashboard and hidden layers job not found."
         }

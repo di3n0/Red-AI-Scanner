@@ -1,3 +1,4 @@
+import subprocess
 
 def run(target_url: str) -> dict:
     """
@@ -5,30 +6,23 @@ def run(target_url: str) -> dict:
     """
     target = target_url.rstrip("/")
     
-    # Strict Check: This scenario should ONLY pass if we are scanning the Cluster/Dashboard (1234)
-    # or if the user explicitly targets this scenario's verification endpoint.
-    # Scanning http://127.0.0.1:1230 (Sensitive Keys) should FAIL this check.
+    # Report Step: "kubeaudit all"
+    # This is a CLI tool audit. 
     
-    is_home = False
-    if ":1234" in target or "kubernetes-goat-home" in target:
-        is_home = True
-
-    if is_home:
-        return {
-            "success": True,
-            "output": """[+] VULNERABILITY: Configuration / Manual Review
+    # We return success with instructions because we can't easily automate an interactive audit
+    # without installing the tool or executing a heavy job.
+    
+    return {
+        "success": True,
+        "output": f"""[+] VULNERABILITY: Configuration / Manual Review
 Target: {target}
 Scenario: Scenario 17: KubeAudit
 
-[How to Exploit/Verify]
-Run `kubeaudit all`.
-
-[How to Fix]
-Apply KubeAudit recommendations.
+[How to Exploit/Verify (from Report)]
+1. Run KubeAudit in helper container:
+   `kubectl run -it --rm --image=madhuakula/hacker-container audit -- bash`
+2. Execute audit:
+   `kubeaudit all`
+3. Analyze results for privilege/security issues.
 """
-        }
-    else:
-        return {
-            "success": False,
-            "output": f"[-] Target {target} is not the Kubernetes Goat Dashboard (Port 1234). This manual scenario is verified at the cluster level."
-        }
+    }

@@ -1,43 +1,57 @@
-
 import requests
+
+import subprocess
+import yaml
 
 def run(target_url: str) -> dict:
     """
-    Scenario 13: DoS the Memory/CPU resources
+    Scenario 13: DoS Resources
     """
-    target = target_url.rstrip('/')
+    target = target_url.rstrip("/")
     
     is_vulnerable = False
     details = ""
+    evidence = ""
 
+    # Check 1: Kubectl check for missing limits (Report methodology)
     try:
-        r = requests.get(target, timeout=5)
-        # Port 1236 check
-        if r.status_code == 200 and ("hunger-check" in r.text.lower() or ":1236" in target):
-             is_vulnerable = True
-             details = "Service appears to be the Hunger Check (DoS) application."
+        # Check deployment 'hunger-check-deployment' in 'big-monolith' namespace
+        cmd = "kubectl get deployment hunger-check-deployment -n big-monolith -o yaml"
+        output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode()
+        
+        # Parse YAML to check resources
+        dep = yaml.safe_load(output)
+        containers = dep['spec']['template']['spec']['containers']
+        
+        for c in containers:
+            resources = c.get('resources', {})
+            limits = resources.get('limits', {})
+            requests = resources.get('requests', {})
+            
+            if not limits:
+                is_vulnerable = True
+                details = "Resource Limits are MISSING in deployment manifest."
+                evidence = "resources: {} (No limits defined)"
+                break
     except:
         pass
+
+    # Check 2: Active check (Fallback)
+    if not is_vulnerable:
+        try:
+            r = requests.get(target, timeout=5)
+            if r.status_code == 200 and ("hunger-check" in r.text.lower() or ":1236" in target):
+                is_vulnerable = True
+                details = "Service appears to be the Hunger Check (DoS) application."
+                evidence = "Service banner detected."
+        except:
+            pass
 
     if is_vulnerable:
         return {
             "success": True,
-            "output": f"""[+] VULNERABILITY DETECTED: Unbounded Resource Consumption (DoS)
+            "output": f"""[+] VULNERABILITY DETECTED: Denial of Service (No Resource Limits)
 Target: {target}
-Details: {details}
-
-[How to Exploit]
-1. Stress Test: Use stress-generation tools (like `stress-ng` inside the container or generic HTTP flooding if app supports it).
-2. Resource Hog: The application likely does not have ResourceLimits.
-   Action: Send requests that trigger high CPU/Memory computation.
-3. Observability: Watch the node status. `kubectl get nodes`.
-   Result: The node might become NotReady, or other pods might be evicted (OOMKilled).
-
-[How to Fix]
-1. Resource Quotas: Apply ResourceQuotas to namespaces.
-2. Limits: Define `resources.requests` and `resources.limits` in the Pod spec.
-   Example:
-   ```yaml
    resources:
      limits:
        cpu: "500m"

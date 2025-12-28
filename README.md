@@ -8,6 +8,38 @@
 Red-AI-Scanner 是一個透過 AI 驅動的自動化掃描與漏洞驗證工具，整合了 Nmap、Nuclei 等掃描器，並利用 LLM 生成與驗證 Exploit。
 
 </br></br>
+## System Architecture
+
+此專案採用 **前後端分離 (Decoupled Architecture)** 架構，確保系統的擴展性與維護性。
+
+### 💻 Frontend (Client Side)
+負責提供使用者互動介面、視覺化掃描結果與操作控制。
+*   **Framework**: [Next.js 16](https://nextjs.org/) (App Router 架構)
+*   **Language**: TypeScript / React
+*   **Styling**: [Tailwind CSS](https://tailwindcss.com/) (現代化 Utility-first CSS)
+*   **Container**: `node:20-alpine`
+*   **Key Features**:
+    *   **Dashboard**: 即時監控掃描進度與顯示 Nmap/Nuclei JSON 結果。
+    *   **Exploit Generator**: 介接 API 觸發 AI 生成攻擊腳本。
+    *   **Responsive UI**: 適應不同裝置的操作介面。
+
+### ⚙️ Backend (Server Side)
+負責核心邏輯處理、調度資安工具與 AI 模型串接。
+*   **Framework**: [FastAPI](https://fastapi.tiangolo.com/) (Python 3.10)
+*   **Security Tools**:
+    *   **Nmap**: 負責網路探測與 Port Scanning。
+    *   **Nuclei**: 負責基於 Template 的漏洞掃描 (使用 `-json-export` 輸出)。
+*   **AI Engine**:
+    *   **LLM Connectivity**: 整合 Groq (Llama-3.3) 或 Google Gemini API。
+    *   **Code Generation**: 將漏洞特徵 (CVE/Misconfiguration) 轉換為 Python PoC 腳本。
+*   **Task Management**: 使用 `subprocess` 與 `asyncio` 進行非同步掃描任務管理。
+*   **Container**: `python:3.10-slim`
+
+### 🐳 Infrastructure
+*   **Docker Compose**: 透過 `docker-compose.yml` 編排前後端服務。
+*   **Networking**: 建立內部虛擬網路，讓 Frontend 直接透過 `http://backend:8000` (或 client-side 的 `localhost:8000`) 進行通訊。
+
+</br></br>
 ## Motivation
 鑑於 GB200 算力平台在佈署 Web 管理介面與 Kubernetes 叢集時，常因複雜的配置需求而面臨潛在的安全配置錯誤（Misconfiguration）風險，本專案旨在透過 AI 驅動的自動化掃描與漏洞腳本生成技術，建立一套能快速驗證 AI 基礎設施弱點的紅隊工具。
 

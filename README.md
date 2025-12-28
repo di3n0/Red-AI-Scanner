@@ -46,20 +46,6 @@ Red-AI-Scanner 是一個自動化掃描與漏洞驗證工具，整合了 Nmap、
 *   **Docker Compose**: 透過 `docker-compose.yml` 編排前後端服務。
 *   **Networking**: 建立內部虛擬網路，讓 Frontend 直接透過 `http://backend:8000` (或 client-side 的 `localhost:8000`) 進行通訊。
 
-## Target
-- [vulnerables/web-dvwa](https://hub.docker.com/r/vulnerables/web-dvwa)
-    ```
-    docker run --rm -it -p 80:80 vulnerables/web-dvwa
-    ```
-- [Kubernets Goat](https://madhuakula.com/kubernetes-goat/docs)
-    ```
-    git clone https://github.com/madhuakula/kubernetes-goat.git
-    cd kubernetes-goat
-    chmod +x setup-kubernetes-goat.sh
-    bash setup-kubernetes-goat.sh
-    ```
-- [WebGoat/WebGoat](https://github.com/WebGoat/WebGoat)
-
 </br></br>
 
 ## Development Tools

@@ -141,19 +141,10 @@ Kubernets Goat
 
 </br></br>
 
-## Docker Build & Run
+## Docker 
 ### Environment
 - Backend Port: `8000`
 - Frontend Port: `3000`
-
-### Run with Docker Compose
-```bash
-# 啟動服務 (會自動建立 Image)
-sudo docker compose up --build
-
-# 停止服務
-sudo docker compose down
-```
 
 ### Docker Hub
 - Backend: `dinosaursmallli/red-ai-backend:v1`

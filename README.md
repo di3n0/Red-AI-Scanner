@@ -1,6 +1,6 @@
 # Side Project 紅隊弱描或測試工具
 
-- [操作界面簡介](https://hackmd.io/@dinosaur/H1sW7Nw9a/https%3A%2F%2Fhackmd.io%2F%40dinosaur%2FHycXX3BXA)
+- [操作界面簡介](https://hackmd.io/@dinosaur/rJqg2XFQWl)
 
 </br></br>
 

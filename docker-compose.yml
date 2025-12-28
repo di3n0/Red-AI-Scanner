@@ -2,15 +2,13 @@ version: '3.8'
 
 services:
   backend:
-    build: 
+    build:
       context: ./backend
     container_name: red-ai-backend
     ports:
       - "8000:8000"
-    environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     volumes:
-      - ./backend:/app  # Optional: for live development
+      - ./backend:/app # Optional: for live development
     restart: unless-stopped
 
   frontend:

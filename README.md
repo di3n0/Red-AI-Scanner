@@ -42,7 +42,6 @@ Red-AI-Scanner 是一個透過 AI 驅動的自動化掃描與漏洞驗證工具�
 ## Motivation
 鑑於 GB200 算力平台在佈署 Web 管理介面與 Kubernetes 叢集時，常因複雜的配置需求而面臨潛在的安全配置錯誤（Misconfiguration）風險，本專案旨在透過 AI 驅動的自動化掃描與漏洞腳本生成技術，建立一套能快速驗證 AI 基礎設施弱點的紅隊工具。
 
-</br></br>
 ## Target
 - [vulnerables/web-dvwa](https://hub.docker.com/r/vulnerables/web-dvwa)
     ```
@@ -58,54 +57,20 @@ Red-AI-Scanner 是一個透過 AI 驅動的自動化掃描與漏洞驗證工具�
 - [WebGoat/WebGoat](https://github.com/WebGoat/WebGoat)
 
 ## Concept
-- [OWASP Top Ten Web Application Security Risks](https://owasp.org/www-project-top-ten/)
 - [OWASP Kubernetes Top Ten](https://owasp.org/www-project-kubernetes-top-ten/)
 
-
-
-</br></br></br></br>
 ## Development Tools
 - Gemini(Google AI Pro)
 - geminicli
 - Antigravity
 
 ## Environment
-OS:	Ubuntu 24.04.2 LTS x86_64
-Kernel:	6.14.0-24-generic
-CPU: Intel i5-1135G7(2)
-Memory:	3867MiB
-VMWare Workstation Pro
-</br></br></br></br>
-
-
-## Reference
-- [Gemini CLI Document](https://geminicli.com/docs/)
-- [Gemini CLI 文件](https://gemini-cli.gh.miniasp.com/)
-- [Youtube|Gemini CLI 教學](https://youtu.be/UfrXGfivlEQ?si=utRH06efmRpoQAhW)
-- [Youtube|Google Antigravity 教學](https://www.youtube.com/watch?v=-FW5DgQEV0M)
-- [手把手教你：申請免費Google Gemini API](https://lifecheatslab.com/freegeminiapi/#%E7%94%B3%E8%AB%8B%E5%85%8D%E8%B2%BB_Google_Gemini_API_%E9%9C%80%E8%A6%81%E4%BB%80%E9%BA%BC)
-- [Node.js Install](https://nodejs.org/zh-tw/download)
-    ``` bash
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-    \. "$HOME/.nvm/nvm.sh"  # 不想重新啟動 shell 
-    nvm install 24  # 下載並安裝 Node.js
-    node -v # Should print "v24.12.0".
-    ```
-- [GitHub|google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli)
-    ```
-    npm install -g @google/gemini-cli
-    ```
-- [Google Download Antigravity](https://antigravity.google/download)
-    ```
-    sudo mkdir -p /etc/apt/keyrings
-    curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
-    sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
-    echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
-    sudo tee /etc/apt/sources.list.d/antigravity.list > /dev/null
-
-    sudo apt update
-    sudo apt install antigravity
-    ```
+- OS: Ubuntu 24.04.2 LTS x86_64
+- Kernel: 6.14.0-24-generic
+- CPU: Intel i5-1135G7(2)
+- Memory: 3867MiB
+- VMWare Workstation Pro
+</br></br>
 
 ### Step
 #### Environment => Gemini CLI
@@ -193,3 +158,34 @@ sudo docker compose down
 docker pull dinosaursmallli/red-ai-backend:v1
 docker pull dinosaursmallli/red-ai-frontend:v1
 ```
+
+
+## Reference
+- [Gemini CLI Document](https://geminicli.com/docs/)
+- [Gemini CLI 文件](https://gemini-cli.gh.miniasp.com/)
+- [Youtube|Gemini CLI 教學](https://youtu.be/UfrXGfivlEQ?si=utRH06efmRpoQAhW)
+- [Youtube|Google Antigravity 教學](https://www.youtube.com/watch?v=-FW5DgQEV0M)
+- [手把手教你：申請免費Google Gemini API](https://lifecheatslab.com/freegeminiapi/#%E7%94%B3%E8%AB%8B%E5%85%8D%E8%B2%BB_Google_Gemini_API_%E9%9C%80%E8%A6%81%E4%BB%80%E9%BA%BC)
+- [Node.js Install](https://nodejs.org/zh-tw/download)
+    ``` bash
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+    \. "$HOME/.nvm/nvm.sh"  # 不想重新啟動 shell 
+    nvm install 24  # 下載並安裝 Node.js
+    node -v # Should print "v24.12.0".
+    ```
+- [GitHub|google-gemini/gemini-cli](https://github.com/google-gemini/gemini-cli)
+    ```
+    npm install -g @google/gemini-cli
+    ```
+- [Google Download Antigravity](https://antigravity.google/download)
+    ```
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
+    sudo gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
+    echo "deb [signed-by=/etc/apt/keyrings/antigravity-repo-key.gpg] https://us-central1-apt.pkg.dev/projects/antigravity-auto-updater-dev/ antigravity-debian main" | \
+    sudo tee /etc/apt/sources.list.d/antigravity.list > /dev/null
+
+    sudo apt update
+    sudo apt install antigravity
+    ```
+

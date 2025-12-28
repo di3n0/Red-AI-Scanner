@@ -2,11 +2,15 @@
 
 - [操作界面簡介](https://hackmd.io/@dinosaur/H1sW7Nw9a/https%3A%2F%2Fhackmd.io%2F%40dinosaur%2FHycXX3BXA)
 
-</br></br>
 ## Brief Introduction
 Red-AI-Scanner 是一個透過 AI 驅動的自動化掃描與漏洞驗證工具，整合了 Nmap、Nuclei 等掃描器，並利用 LLM 生成與驗證 Exploit。
 
-</br></br>
+## Concept
+- [OWASP Kubernetes Top Ten](https://owasp.org/www-project-kubernetes-top-ten/)
+
+## Motivation
+鑑於 GB200 算力平台在佈署 Web 管理介面與 Kubernetes 叢集時，常因複雜的配置需求而面臨潛在的安全配置錯誤（Misconfiguration）風險，本專案旨在透過 AI 驅動的自動化掃描與漏洞腳本生成技術，建立一套能快速驗證 AI 基礎設施弱點的紅隊工具。
+
 ## System Architecture
 
 此專案採用 **前後端分離 (Decoupled Architecture)** 架構，確保系統的擴展性與維護性。
@@ -38,10 +42,6 @@ Red-AI-Scanner 是一個透過 AI 驅動的自動化掃描與漏洞驗證工具�
 *   **Docker Compose**: 透過 `docker-compose.yml` 編排前後端服務。
 *   **Networking**: 建立內部虛擬網路，讓 Frontend 直接透過 `http://backend:8000` (或 client-side 的 `localhost:8000`) 進行通訊。
 
-</br></br>
-## Motivation
-鑑於 GB200 算力平台在佈署 Web 管理介面與 Kubernetes 叢集時，常因複雜的配置需求而面臨潛在的安全配置錯誤（Misconfiguration）風險，本專案旨在透過 AI 驅動的自動化掃描與漏洞腳本生成技術，建立一套能快速驗證 AI 基礎設施弱點的紅隊工具。
-
 ## Target
 - [vulnerables/web-dvwa](https://hub.docker.com/r/vulnerables/web-dvwa)
     ```
@@ -55,9 +55,6 @@ Red-AI-Scanner 是一個透過 AI 驅動的自動化掃描與漏洞驗證工具�
     bash setup-kubernetes-goat.sh
     ```
 - [WebGoat/WebGoat](https://github.com/WebGoat/WebGoat)
-
-## Concept
-- [OWASP Kubernetes Top Ten](https://owasp.org/www-project-kubernetes-top-ten/)
 
 ## Development Tools
 - Gemini(Google AI Pro)

@@ -1,0 +1,39 @@
+INFO:     Started server process [79919]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+[DEBUG] Executing Nuclei command: /usr/local/bin/nuclei -u http://127.0.0.1:1230 -json-export /tmp/nuclei_http___127.0.0.1_1230.json
+[DEBUG] Nuclei STDERR: 
+                     __     _
+   ____  __  _______/ /__  (_)
+  / __ \/ / / / ___/ / _ \/ /
+ / / / / /_/ / /__/ /  __/ /
+/_/ /_/\__,_/\___/_/\___/_/   v3.3.6
+
+		projectdiscovery.io
+
+[[31mWRN[0m] Found 1 templates with syntax error (use -validate flag for further examination)
+[[31mWRN[0m] Found 3 templates with runtime error (use -validate flag for further examination)
+[[34mINF[0m] Current nuclei version: v3.3.6 ([91moutdated[0m)
+[[34mINF[0m] Current nuclei-templates version: v10.3.6 (...
+INFO:     127.0.0.1:42236 - "POST /scan/nuclei HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50402 - "OPTIONS /scan/nmap HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50406 - "POST /scan/nmap HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50406 - "OPTIONS /scan/nuclei HTTP/1.1" 200 OK
+[DEBUG] Executing Nuclei command: /usr/local/bin/nuclei -u http://127.0.0.1:1230 -json-export /tmp/nuclei_http___127.0.0.1_1230.json
+[DEBUG] Nuclei STDERR: 
+                     __     _
+   ____  __  _______/ /__  (_)
+  / __ \/ / / / ___/ / _ \/ /
+ / / / / /_/ / /__/ /  __/ /
+/_/ /_/\__,_/\___/_/\___/_/   v3.3.6
+
+		projectdiscovery.io
+
+[[31mWRN[0m] Found 1 templates with syntax error (use -validate flag for further examination)
+[[31mWRN[0m] Found 3 templates with runtime error (use -validate flag for further examination)
+[[34mINF[0m] Current nuclei version: v3.3.6 ([91moutdated[0m)
+[[34mINF[0m] Current nuclei-templates version: v10.3.6 (...
+INFO:     127.0.0.1:50402 - "POST /scan/nuclei HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60322 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60322 - "GET /favicon.ico HTTP/1.1" 404 Not Found

@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context: ./backend
+    container_name: red-ai-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+    volumes:
+      - ./backend:/app  # Optional: for live development
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: red-ai-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    # Environment variables for Next.js need to be build-time usually, 
+    # but here mostly relying on client-side hardcoded localhost:8000 calls.

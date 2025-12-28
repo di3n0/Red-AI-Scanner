@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+python-nmap
+# For interacting with Nuclei, we might use subprocess, but listing it here for clarity if a wrapper lib exists (usually subprocess is fine)
+google-generativeai
+pydantic
+requests
+beautifulsoup4
+python-owasp-zap-v2.4
+python-dotenv

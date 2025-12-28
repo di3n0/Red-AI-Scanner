@@ -1,0 +1,4 @@
+nohup: ignoring input
+kubectl setup looks good.
+Creating port forward for all the Kubernetes Goat resources to locally. We will be using 1230 to 1236 ports locally!
+Visit http://127.0.0.1:1234 to get started with your Kubernetes Goat hacking!

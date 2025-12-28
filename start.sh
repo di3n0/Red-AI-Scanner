@@ -36,11 +36,24 @@ fuser -k 8000/tcp 2>/dev/null
 fuser -k 3000/tcp 2>/dev/null
 pkill -f "python3 main.py" 2>/dev/null
 pkill -f "next-server" 2>/dev/null
+pkill -f "kubectl port-forward" 2>/dev/null
 
 progress_bar 10 "Cleaning up old processes..."
 sleep 0.5
 
-# --- Step 2: Backend Setup ---
+# --- Step 2: K8s Goat Setup ---
+progress_bar 20 "Starting K8s Goat Environment..."
+if [ -f "kubernetes-goat/access-kubernetes-goat.sh" ]; then
+    bash kubernetes-goat/access-kubernetes-goat.sh > /dev/null 2>&1 &
+    GOAT_PID=$!
+    echo ""
+    echo "[*] K8s Goat is running in background (PID: $GOAT_PID)"
+else
+    echo ""
+    echo "[!] Warning: K8s Goat script not found!"
+fi
+
+# --- Step 3: Backend Setup ---
 # echo "[*] Setting up Backend..."
 cd backend
 

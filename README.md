@@ -160,8 +160,8 @@ sudo docker compose down
 - Frontend: `dinosaursmallli/red-ai-frontend:v1`
 
 ```bash
-docker pull dinosaursmallli/red-ai-backend:v1
-docker pull dinosaursmallli/red-ai-frontend:v1
+sudo docker pull dinosaursmallli/red-ai-backend:v1
+sudo docker pull dinosaursmallli/red-ai-frontend:v1
 ```
 
 </br></br>

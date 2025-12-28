@@ -1,8 +1,5 @@
 # Side Project 紅隊弱描或測試工具
 
-[TOC]
-
----
 </br></br>
 ## Brief Introduction
 Red-AI-Scanner 是一個透過 AI 驅動的自動化掃描與漏洞驗證工具，整合了 Nmap、Nuclei 等掃描器，並利用 LLM 生成與驗證 Exploit。

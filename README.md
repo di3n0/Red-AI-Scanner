@@ -97,11 +97,19 @@ Requirements:
 前端第二個框輸入腳本網址。將網址的腳本傳給Gemini撰寫Exploit Script，作為以後做完攻擊目標網址後可以選擇的腳本。
 根據report資料夾中的1至22.pdf撰寫Kubernets Goat攻擊腳本。
 
-攻擊腳本分類：
-Kubernets Goat
+Kubernets Goat攻擊腳本分類：
 - Sensitive keys in codebases
 - DIND (docker-in-docker) exploitation
 - SSRF in the Kubernetes (K8S) world
+- Container escape to the host system
+- Docker CIS benchmarks analysis
+- Kubernetes CIS benchmarks analysis
+- Attacking private registry
+- NodePort exposed services
+- Helm v2 tiller to PwN the cluster - [Deprecated]
+- Analyzing crypto miner container
+- Kubernetes namespaces bypass
+- Gaining environment information
 - DoS the Memory/CPU resources
 - Hacker container preview
 - Hidden in layers
